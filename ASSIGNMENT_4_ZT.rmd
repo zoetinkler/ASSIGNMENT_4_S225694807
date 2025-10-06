@@ -1,10 +1,653 @@
 ---
-title: "ASSIGNMENT 4 - Part 1"
-author: Zoe Tinkler - S225694807
-output: html_document
-date: "2025-09-22"
+title: "ASSIGNMENT 4 - R Project"
+author: "Zoe Tinkler - S225694807"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    fig_width: 7
+    fig_height: 7
+    fig_caption: yes
+    theme: spacelab
+bibliography: references.bib
+csl: harvard-deakin-university.csl
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
+
+### **Part 1: Importing files, data wrangling, mathematical operations, plots and saving code on GitHub**
+
+### 1. Read in the file, making the gene identifiers the row names. Show a table of values for the first six genes
+
+The file `gene_expression.tsv` [@ghazkha_gene_expressiontsv_2024] contains RNA-seq count data for three GTEx samples of interest. The file was imported into R using `read.table`, setting the gene identifiers as row names. The first six rows were displayed for an initial inspection of the read counts for the first six genes in each sample.
+
+```{r gene expression download}
+# Download the gene expression dataset from GitHub and save it locally within working directory.
+
+download.file("https://raw.githubusercontent.com/ghazkha/Assessment4/refs/heads/main/gene_expression.tsv", destfile = "gene_expression.tsv")
+
+# Read the downloaded TSV file from GitHub into RStudio as a data frame
+
+gene_expression_data <- read.table("gene_expression.tsv", header = TRUE, sep = "\t", row.names = 1)
+
+# Display the first few rows to check the data
+knitr::kable(head(gene_expression_data), caption = "Table 1: RNA-seq read counts for selected genes across three samples. Data was downloaded from a publicy available dataset on GitHub (gene_expression.tsv). Each value representes the number of sequencing reads mapped to the corresponding gene in each sample.")
+```
+
+### 2. Make a new column which is the mean of the other columns. Show a table of values for the first six genes.
+
+To summarise the gene expression across the three samples, a mean expression column was added using `rowMeans`. The first six rows with the new column were then checked.
+
+```{r average_expression}
+# Calculate the mean expression for each gene across all of the samples
+
+gene_expression_data$MeanExpression <- rowMeans(gene_expression_data)
+
+# Check the updated data frame with the new MeanExpression column
+
+knitr::kable(head(gene_expression_data), caption = "Table 2: RNA-seq read counts for selected genes across three samples. Mean expression of each gene across the three samples can be seen in the last column.")
+```
+
+### 3. List the 10 genes with the highest mean expression
+
+The top 10 most highly expressed genes were calculated from the mean expression column. This was done using the `order` function and decreasing was set to TRUE, to ensure the highest values were at the top of the order. The most abundant genes are the mitochondrial genes, MT-CO1, MT-ND4 and MT-CO3.
+
+```{r 10 genes mean expression}
+# Sort the genes by mean expression in descending order and read the top 10 lines
+
+top_10_genes <- gene_expression_data[order(gene_expression_data$MeanExpression, decreasing = TRUE),]
+
+knitr::kable(head(top_10_genes, 10), caption = "Table 3: Top 10 most highly expressed genes across the three GTEx samples. Values represent read counts, and the last column shows the mean expression across the three samples.")
+```
+
+### 4. Determine the number of genes with a mean <10
+
+The number of genes with a mean expression of less than 10 is 35,988. This was calculated by using the `sum` function on R, for the data in the mean expression column that was less than 10.
+
+```{r genes less than 10}
+# Count the number of genes with mean expression of less than 10 and print the result
+
+num_genes_less_10 <- sum(gene_expression_data$MeanExpression <10)
+num_genes_less_10
+```
+
+### 5. Make a histogram plot of the mean values
+
+A histogram of mean gene expression values was created to visualise the expression patterns using the `hist` function in R. The data was log-transformed due to the large number of small values. It shows a heavily skewed distribution, with most genes having low expression.
+
+```{r gene expression histogram, fig.cap = "Figure 1: Histogram of mean gene expression distribution across all genes. Mean expression values were log-transformed to account for large range of expression."}
+# Create a histogram of the mean gene expression 
+
+hist(log10(gene_expression_data$MeanExpression+1),
+     main = "Histogram of Mean Gene Expression", # title of the histogram
+     xlab = "Mean Gene Expression", # x-axis title
+     ylab = "Number of Genes", # y-axis title
+     col = "lightgreen") # colour of the graph
+```
+
+### 6. Import this Tree Growth csv file into an R object. What are the column names?
+
+The file `growth_data.csv` [@ghazkha_growth_datacsv_2024] contains the measurements of tree circumferences at two sites over 20 years. The file was imported using `read.csv` and the column names were viewed as below in Table 4.
+
+```{r import tree growth data}
+# Load in the tree growth dataset from GitHub
+
+growth_data <- read.csv("https://raw.githubusercontent.com/ghazkha/Assessment4/refs/heads/main/growth_data.csv")
+
+# Display the first few rows and column names to check
+
+knitr::kable(head(growth_data), caption = "Table 4: Top 6 rows of tree growth data over 15 years from a dataset publicly accessed from GitHub")
+```
+
+### 7. Calculate the mean and standard deviation of tree circumference at the start and end of the study at both sites.
+
+The mean and standard deviation of the tree circumferences in 2005 and 2020 were calculated using the `mean` and `sd` functions. Both sites showed an increase in tree circumference growth over the 15 years with the Northeast site having a greater average growth at the end of the 15 years than the Southwest site.
+
+```{r mean and SD at 2 sites}
+# Separate the tree growth data by the individual sites
+northeast <- subset(growth_data, Site == "northeast")
+southwest <- subset(growth_data, Site == "southwest")
+
+# Caluclate the mean and SD for tree circumference growth in 2005 and 2020
+
+mean_tree_circumf <- data.frame(
+  Site = c("Northeast", "Southwest", "Southwest", "Southwest"),
+  Year = c(2005, 2020, 2005, 2020),
+  Mean_cm = c(
+    mean(northeast$Circumf_2005_cm),
+    mean(northeast$Circumf_2020_cm),
+    mean(southwest$Circumf_2005_cm),
+    mean(southwest$Circumf_2020_cm)),
+  SD_cm = c(
+    sd(northeast$Circumf_2005_cm),
+    sd(northeast$Circumf_2020_cm),
+    sd(southwest$Circumf_2005_cm),
+    sd(southwest$Circumf_2020_cm))
+)
+
+knitr::kable(head(mean_tree_circumf), caption = "Table 5: Mean and standard deviation of tree circumference calculated for each of the sites Northeast and Southwest in 2005 and 2020")
+```
+
+### 8. Make a box plot of tree circumference at the start and end of the study at both sites 
+
+A boxplot comparing tree circumference in 2005 and 2020 for both sites was created to illustrate the growth over 15 years. The box plot indicates a larger growth at the Northeast site than the Southwest site as seen in Figure 2.
+
+```{r box plot for tree circumferences, fig.cap = "Figure 2: Box plot comparing tree circumferences at the start (2005) and ad the end (2020) of the study at both sites Northeast (NE) and Southwest (SW)"}
+
+# Create a boxplot to compare the tree circumferences at the start and end of the study for both sites
+
+boxplot(northeast$Circumf_2005_cm, northeast$Circumf_2020_cm, # Uses the 2005 and 2020 Circumference data from the northeast subset
+        southwest$Circumf_2005_cm, southwest$Circumf_2020_cm, # Uses the 2005 and 2020 Circumference data from the southwest subset
+        names = c("NE 2005", "NE 2020", # Names the x-axis for different groups
+                  "SW 2005", "SW 2020"),
+        col = c("lightgreen","lightgreen", "lightblue", "lightblue"), # Chooses the colours for each boxplot
+        xlab = "Site Location and Year", # x-axis title
+        ylab = "Tree Circumference (cm)", # y-axis title
+        main = "Tree Circumference at Start of Study (2005) to End of Study (2020)") # Boxplot main title
+legend("topright", # Adds plot legend to the top right 
+       legend = c("NE = Northeast", "SW = Southwest"), # Creates icons with the terminology
+       fill = c("lightgreen", "lightblue"), # Chooses the colors to match the ones above
+       bty = "n", # ensures no box around the legend
+       cex = 0.7) # changes the font size of the legend text
+```
+
+### Calculate the mean growth over the last 10 years at each site
+
+To calculate the growth of tree circumference over the last 10 years, the difference between 2020 and 2010 measurements were calculated. The mean growth was 42.94cm at Northeast site and 35.49cm at the Southwest site.
+
+```{r mean growth 10yr}
+# Calculate the growth over the last 10 years for each site by subtracting the 2020 data from 2010 data for each site
+
+northeast$growth_10yrs <- northeast$Circumf_2020_cm - northeast$Circumf_2010_cm 
+southwest$growth_10yrs <- southwest$Circumf_2020_cm - southwest$Circumf_2010_cm 
+
+# Calculate mean growth over 10 years for each site
+
+mean_growth_10_yr <- data.frame(
+  Site = c("Northeast", "Southwest"),
+  Mean_Growth_cm = c(mean(northeast$growth_10yrs), mean(southwest$growth_10yrs))
+)
+
+knitr::kable(mean_growth_10_yr, caption = "Table 6: Mean growth over 10 years at two sites, Northeast and Southwest")
+
+```
+
+### 10. Use the t.test to estimate the p-value that the 10-year growth is different at the two sites.
+
+A Welch two-sample t-test was performed to compare the mean 10-year tree circumference growth between the Northeast and Southwest sites. The t-test resulted in a p-value of 0.062. Since the p-value is slightly above 0.05, it is not statistically significant. The observed result does not provide sufficient evidence to reject the null hypothesis, so it cannot be concluded that the mean growth differs between the two sites.
+
+### T Test Results
+```{r t test results}
+# Perform a t-test to compare average growth data over 10 years
+
+t_test_result <- t.test(northeast$growth_10yrs, southwest$growth_10yrs)
+
+# Display full t-test results 
+t_test_result
+
+# Display only the p-value
+cat("The p-value for the average tree circumference growth over 10 years is", t_test_result$p.value, ".\n")
+```
+
+### **Part 2: Examining Biological Sequence Diversity**
+```{r loading packages}
+suppressPackageStartupMessages({
+  library("seqinr") # is a package designed to process and analyse sequence data.
+  library("R.utils") # general utilities like zip and unzip
+  library("ggplot2") # data visualisation
+})
+```
+
+### 1. Download the whole set of coding DNA sequences for E. coli and your organism of interest. How many coding sequences are present in these organisms? Present this in the form of a table. Describe any differences between the two organisms.
+
+The *Escherichia coli* str K-12 substr. MG1622 str. K12 (GCA_000005845) and *Bifidobacteriaceae bacterium* WP012 (GCA_003585625) coding DNA sequences (CDS) were downloaded and unzipped from Ensembl using the `download.file` and `gunzip` function.
+
+```{r download cds files}
+library("R.utils")
+
+# Define E. coli and Bifidobacteriaciae URLs for their coding sequences from Ensembl
+
+organisms_url <- list(ecoli = "http://ftp.ensemblgenomes.org/pub/bacteria/release-53/fasta/bacteria_0_collection/escherichia_coli_str_k_12_substr_mg1655_gca_000005845/cds/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.cds.all.fa.gz",
+                     bifido = "https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_63_collection/bifidobacteriaceae_bacterium_wp012_gca_003585625/cds/Bifidobacteriaceae_bacterium_wp012_gca_003585625.ASM358562v1.cds.all.fa.gz")
+
+# Name the files for downloading
+destfiles <- c("ecoli_cds.fa.gz", "bifido_cds.fa.gz")
+
+# Loop to download and unzip each file
+lapply(seq_along(organisms_url), function(i) { #seq_along to download regular sequences
+  download.file(url = organisms_url[[i]], destfile = destfiles[i]) # downloads the files
+  gunzip(destfiles[i], overwrite = TRUE) # unzips the files
+})
+
+# list.files() #List files within working directory to confirm unzip and download has been completed 
+```
+
+Once the files were decompressed the `read.fasta` function from the seqinr package was used. The total number of CDS for each organism was determined using `length`. The results show that *E. coli* have over three times more coding sequences than *Bifidobacteriaceae bacterium*, demonstrating that it is a larger and more complex genome.
+
+```{r cds}
+#Load e.coli coding sequences from FASTA file and inspect the structure of the cds
+
+ecoli_cds <- seqinr::read.fasta("ecoli_cds.fa")
+# To view structure of file use below
+# str(head(ecoli_cds))
+
+#Load Bifidobacteriaceae bacterium coding sequences from FASTA file and inspect the structure of the cds
+
+bifido_cds <- seqinr::read.fasta("bifido_cds.fa")
+# To view structure of file use below
+# str(head(bifido_cds))
+
+# Summarise the number of cds for each organism in a data frame
+cds_length <- data.frame(Organism = c("E. coli", "Bifidobacteriaceae_bacterium"),
+           Coding_Sequences = c(length(ecoli_cds), length(bifido_cds)))
+
+knitr::kable(cds_length, caption = "Table 7: Total number of coding sequences in both E. coli and Bifidobacteriaceae bacterium")
+
+# Use below for first six rows of the statistics for each cds 
+# head(summary(ecoli_cds))
+# head(summary(bifido_cds))
+```
+
+### 2. How much coding DNA is there in total for these two organisms? Present this in the form of a table. Describe any differences between the two organisms
+
+To investigate the overall coding DNA, the length of each CDS was determined by using the `summary` function, which gives the total number of base pairs. The results show that *E. coli* has larger amount of coding DNA. The larger amount of coding DNA reflects the larger gene set required to support *E. coli's* complex functions. The smaller genome of *Bifidobacteriaceae bacterium* likely reflects its adaptation to a smaller niche environment.
+
+```{r total coding DNA}
+ecoli_len <- as.numeric(summary(ecoli_cds)[,1]) #Length of Coding Sequences for E. coli (bp)
+sum(ecoli_len)
+bifido_len <- as.numeric(summary(bifido_cds)[,1]) #Length of Coding Sequences Bifidobacteriaceae  (bp)
+
+# Create a data frame with the sum of all coding bp for each organism
+all_coding_dna <- data.frame(Organism = c("E.coli", "Bifidobacteriaceae_bacterium"),
+                             Total_Coding_bp = c(sum(ecoli_len), sum(bifido_len)))
+
+knitr::kable(all_coding_dna, caption = "Table 8: Total number of coding DNA in both E. coli and Bifidobacteriaceae bacterium")
+```
+
+### 3. Calculate the length of all coding sequences in these two organisms. Make a boxplot of coding sequence length in these organisms. What is the mean and median coding sequence length of these two organisms? Describe any differences between the two organisms.
+
+The length of the coding sequences was calculated using the `length` and then the `sum` function resulting in the same values as in Table 8. These coding sequence results were then used in a box plot to compare the organisms. 
+
+```{r total coding DNA boxplot, fig.cap = "Figure 3: Box plot comparison of E. coli and Bifidobacteriaceae bacterium in coding sequence lengths"}
+# Box plot comparing cds lengths between the two organisms.
+boxplot(ecoli_len, bifido_len,
+        names = c("E. coli", "Bifidobacteriaceae bacterium"),
+        main = "Coding Sequence Lengths Comparison of E. coli and Bifidobacteriaceae",
+        xlab= "Organism",
+        ylab="sequence length (bp)",
+        col = c("lightblue", "pink"))
+
+# Calculate the mean and median for both organisms sequence lengths and put into a data.frame
+mm_seq_lengths <- data.frame(
+  Organism = c("E. coli", "Bifidobacteriaceae"),
+  Mean_bp = c(mean(ecoli_len), mean(bifido_len)),
+  Median_bp = c(median(ecoli_len), median(bifido_len))
+)
+
+knitr::kable(mm_seq_lengths, caption = "Table 9: Mean and median calculations of CDS for E. coli and Bifidobacteriaceae")
+```
+
+The box plot indicates the *Bifidobacteriaceae bacterium* and *E. coli* have similar coding sequence lengths, although there is one larger CDS outlier in *Bifidobacteriaceae bacterium*. The mean and median of the two organisms coding sequences was calculated using the `mean` and `median` functions. These results showed similar average coding sequence lengths and that they most likely have similar functional mechanisms.
+
+### 4. Calculate the frequency of DNA bases in the total coding sequences for both organisms. Perform the same calculation for the total protein sequence. Create bar plots for nucleotide and amino acid frequency. Describe any differences between the two organisms.
+
+The nucleotide composition in both organisms was investigated by firstly, unlisting the `ecoli_cds` and `bifido_cds` files to get them into a single vector, and were counted individually using the `count` function.
+
+#### Frequency of DNA bases
+```{r DNA bases, fig.cap = "Figure 4: Nucleotide composition of E. coli and Bifidobacteriaceae"}
+# Flatten the cds files into a single vector of nucleotides
+ecoli_dna <- unlist(ecoli_cds)
+bifido_dna <- unlist(bifido_cds)
+
+# Count the frequency of single nucleotides in each organism
+ecoli_composition <- count(ecoli_dna,1)
+bifido_composition <- count(bifido_dna,1)
+
+# Create a matrix to be used for boxplot with columns as each nucleotide and rows as the organisms
+composition_matrix <- rbind("E. coli" = ecoli_composition,
+                            "Bifidobacteriaceae" = bifido_composition)
+
+# Create grouped bar plot for nucleotide comparison between two organisms
+barplot(composition_matrix,
+        beside = TRUE, col = c("lightblue", "pink"), # set as grouped barplot with particular colours
+        names.arg = colnames (composition_matrix), # sets labels under each group
+        xlab = "Nucelotide", # x-axis title
+        ylab = "Frequency", # y-axis title
+        main = "Nucleotide Comparison for E. coli and Bifidobacteriaceae", # title of graph
+        space = c(0, 0.2))
+  legend("topright", legend = rownames(composition_matrix), fill = c("lightblue", "pink"), # create graph legend to top right with organisms names
+         cex = 0.7, # size of font for legend
+         bty = "n", # no box around the legend 
+         pt.cex = 0.7) # set the coloured squares to same size as legend font
+```
+
+Whilst the bar plot shows that *E. coli* has a greater amount of nucleotides it reflects the size of it's genome. It can be seen that *E. coli* showed a higher GC composition, whereas *Bifidobacteriaceae bacterium* had a higher AT composition. This could reflect that *E. coli* has a more stable DNA duplex than *Bifidobacteriaceae bacterium* as a result of adaptation to their environments. Additionally, these differences could result from evolutionary divergence in codon usage influencing how efficiently certain genes are expressed.
+
+#### Frequency of Amino Acids
+
+The amino acid composition in both organisms was investigated by firstly, using `lapply` to use the '`translate` function on both the `ecoli_cds` and `bifido_cds` files to get them into the protein sequence. Again, `unlist` was used on the protein sequence to combine all of the CDS protein sequences into one vector. The `names` function was used to remove the stop codons from this list. 
+
+```{r protein sequence, fig.cap = "Figure 5: Amino Acid frequency in E. coli and Bifidobacteriaceae"}
+# Translate all coding sequnces into a protein sequence
+prot_ecoli <- lapply(ecoli_cds, translate)
+prot_bifido <- lapply(bifido_cds, translate)
+
+# Combine all of the protein sequences from E. coli into a single vector
+all_protein_ecoli <- unlist(prot_ecoli)
+# Count the frequency of each amino acid in all of the protein sequences
+aa_freq_ecoli <- table(all_protein_ecoli)
+# Remove the stop codon from the table
+aa_freq_ecoli <- aa_freq_ecoli[names(aa_freq_ecoli) != "*"]
+
+# Combine all of the protein sequences from Bifidobactericiceae into a single vector
+all_protein_bifido <- unlist(prot_bifido)
+# Count the frequency of each amino acid in all of the protein sequences
+aa_freq_bifido <- table(all_protein_bifido)
+# Remove the stop codon from the table
+aa_freq_bifido <- aa_freq_bifido[names(aa_freq_bifido) != "*"]
+
+aa_freq_matrix <- rbind("E. coli" = aa_freq_ecoli,
+                            "Bifidobacteriaceae" = aa_freq_bifido)
+
+# Create barplot to compare amino acid frequency in both organisms
+barplot(aa_freq_matrix,
+        beside = TRUE, col = c("lightblue", "pink"), # set as grouped barplot with particular colours
+        names.arg = colnames (aa_freq_matrix), # each group of data is set as the amino acids 
+        xlab = "Amino Acid", # x-axis title
+        ylab = "Frequency", # y-axis title
+        main = "Amino Acid Comparison for E. coli and Bifidobacteriaceae",
+        cex.names = 0.6) # main graph title
+
+  legend("topright", legend = rownames(composition_matrix), fill = c("lightblue", "pink"), # creates legend for the graph
+         cex = 0.7, # makes font size smaller for legend
+         bty = "n", # removes box around legend
+         pt.cex = 0.7) # makes coloured squares the same size as font
+
+```
+
+A matrix with both organisms was created to make a bar plot for comparison. Both organisms use the same amino acids in respect to their genome size, in Figure 5, a consistent trend of high alanine and leucine can be seen with little use of cysteine and tryptophan. The bar plot indicated that *E. coli* uses leucine more than *Bifidobacteriaceae bacterium*, whilst *E. coli* does have more amino acids than *Bifidobacteriaceae bacterium*, due to it's larger genome, it is known that *E. coli* consumes leucine as a part of a growth pathway, and plays a large nutritional role in the organism [@ziegler_escherichia_2023]. Cysteine can be seen in low frequency in both organisms and could be as a result of its toxicity at high levels in bacteria.
+
+### 5. Create a codon usage table and quantify the codon usage bias among all coding sequences. Describe any differences between the two organisms with respect to their codon usage bias. Provide charts to support your observations.
+
+Codon usage was analysed using the relative synonymous codon usage index which was calculated in both organisms using the `uco` function. A codon usage table was created using the results of `uco` with the RSCU values for each organism. The RSCU values were then subtracted by 1 to analyse further, where if the codon is > 0, then it suggests that it is more commonly used than expected, and if it is < 0 then it indicates lower usage.
+
+```{r codon usage}
+# Load in the seqinr package
+library(seqinr)
+
+# Calculate codon usage using uco and compute Relative Synonymous Codon Usage (RSCU) and put it in a data frame.
+ecoli_codon_usage <- uco(ecoli_dna, index = "rscu", as.data.frame = TRUE) 
+bifido_codon_usage <- uco(bifido_dna, index = "rscu", as.data.frame = TRUE)
+
+# Can display the first 6 rows of the codon usage for each organism using: 
+# head(ecoli_codon_usage)
+# head(bifido_codon_usage)
+
+# Create a codon usage data.frame with both organisms RSCU values for comparison
+codon_usage_table <- data.frame(
+  codon = ecoli_codon_usage$codon, # codon's
+  AA = ecoli_codon_usage$AA, # amino acid's
+  E_coli_RSCU = ecoli_codon_usage$RSCU, # ecoli data
+  Bifidobacterium_RSCU = bifido_codon_usage$RSCU, # bifido data
+  stringsAsFactors = FALSE # keep data as characters/ numerical
+)
+
+ord_codon_usage_table <- codon_usage_table[order(codon_usage_table$AA, codon_usage_table$codon),]
+
+# For RSCU values minus 1 to centre the values around 0 for easier analysis
+ord_codon_usage_table$E_coli_RSCU_1 <- ord_codon_usage_table$E_coli_RSCU - 1
+ord_codon_usage_table$Bifidobacterium_RSCU_1 <- ord_codon_usage_table$Bifidobacterium_RSCU - 1
+
+knitr::kable(head(codon_usage_table), caption = "Table 10: Top 6 rows of Codon usage table of Bifidobacteriaceae and E. coli")
+
+knitr::kable(head(ord_codon_usage_table), caption = "Table 11: Top 6 rows of Codon usage table ordered by amino acid of Bifidobacteriaceae and E. coli")
+```
+
+One plot was created for each codon usage table. Figure 6 was created using ggplot [@hadley_wickham_ggplot2_nodate] and shows a deep analysis of each organisms codon usage for each amino acid. *Bifidobacteriaceae bacterium* is seen to use TGT codon for Cysteine more than *E. coli*, and TCC for Sereine. *E. coli* more frequently uses CCG for Proline and TAA for Stop codons than *Bifidobacteriaceae bacterium*.
+
+```{r codon ggplot, fig.cap = "Figure 6: Grouped bar plot created with ggplot2 to compare the codon usage for each amino acid between E. coli and Bifidobacteriaceae (Wickham H, 2016)"}
+# Create a long format data frame for use in ggplot2
+codon_usage_long <- data.frame(
+  codon = rep(ord_codon_usage_table$codon, 2), # repeat each codon twice (one for each organism)
+  AA = rep(ord_codon_usage_table$AA, 2), # repeats each amino acid assignment for each codon
+  Organism = rep(c("E_coli", "Bifidobacteriaceae"), 
+  each = nrow(ord_codon_usage_table)), #creates grouping factor with E.coli and Bifidobactericiacae
+  RSCU = c(ord_codon_usage_table$E_coli_RSCU, codon_usage_table$Bifidobacterium_RSCU) # puts all RSCU values from both organisms into one column
+)
+
+library("ggplot2")
+# Create grouped bar plots for codon usage
+ggplot(codon_usage_long, aes(x = codon, y = RSCU, fill = Organism)) + 
+  geom_bar(stat = "identity", position = "dodge") + #uses the actual RSCU values rather than counts, dodge places bars side by side
+  facet_wrap(~AA, scales = "free_x", ncol = 5) + # groups the codons by their amino acid and displays them as individual plots
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
+  labs(title = "Codon Usage Comparison between E. coli and Bifidobacteriaceae",
+       x = "Codon", y = "RSCU")
+
+#ggplot created with assistance from https://ggplot2.tidyverse.org/reference/index.html and https://cran.r-project.org/web/packages/ggplot2/ggplot2.pdf 
+
+```
+
+In Figure 7, a clearer comparison of codon usage frequencies can be seen, any RSCU value above 0 suggests that the codon is used more commonly than expected. The codon CTG, which codes for leucine, stands out as being used significantly more in *E. coli* than in *Bifidobacteriaceae bacterium* which prefers to use CTT. In contrast, the codon GTT is used more often in *Bacteriaceae bacterium* than in *E. coli* as seen in the final group bars on the right side of Figure 7. These differences could be a result of its differences in tRNA pool or it's difference in GC content, along with its environmental adaptations [@arella_codon_2021].
+
+```{r codon barplot, fig.cap = "Figure 7: Bar plot of RSCU values minus 1 for both organisms. RSCU value of > 0 suggests more frequent use. Values < 0 indicate lower usage"}
+# Put RSCU values into a matrix where rows = organisms, columns = codons
+rscu_matrix <- rbind(E_coli = ord_codon_usage_table$E_coli_RSCU_1,
+                     Bifidobacterium = ord_codon_usage_table$Bifidobacterium_RSCU_1)
+
+# Labels for barplot for codon and corresponding amino acid name
+codonlabels <- paste0(ord_codon_usage_table$codon, "(", ord_codon_usage_table$AA, ")")
+
+# Create a barplot comparing both organisms based on RSCU value minus 1
+barplot(rscu_matrix,
+        beside = TRUE, # sets graph as grouped bar plot
+        col = c("lightblue", "pink"), # sets colours for each organism
+        names.arg = codonlabels, #labels for each bar group
+        las = 2, # turns names on side
+        cex.names = 0.5, # decrease font size
+        xlab= "Codon & Amino Acid", # x-axis labels
+        ylab = "RSCU Value - 1", # y-axis title # y-axis labels
+        main = "Codon Usage Comparison for E. coli and Bifidobacteriaceae") # main chart title 
+legend("topright", # legend in top right corner
+       legend = c("E. coli", "Bifidobacteriaceae"), #two colours
+       fill = c("lightblue", "pink"),
+       cex = 0.7, # size of font
+       bty = "n") # no border around legend
+```
+
+### 6. In the organism of interest, identify 10 protein sequence k-mers of length 3-5 which are most over- and under- represented k-mers. Are these k-mers also over- and under- represneted in E. coli to a similar extent? Provide plots to support your observations. Why do you think these sequences are present at different levels in the genome of these organisms?
+
+To understand the overrepresented and underrepresented k-mers of lengths 3-5 in *Bifidobacteriaceae bacterium* and their representation in *E. coli* they were analysed by using the `count` function and setting the alphabet with the `unique` function and frequency to TRUE. This gained the frequency of each k-mer. 
+
+#### *Bifidobacteriaceae bacterium* k-mers
+
+As expected the k-mers with length of 3 were the most overrepresented, this is because they are more likely to show up than k-mers with length of 5. Therefore, I decided to compare the overrepresented k-mers with the underrepresented k-mers with length of 3. It can be seen in Table 10 and 11, that the most overrepresented k-mers were alanine and leucine in nature which confirms with the amino acid frequency calculated above, and underrepresented k-mers of cysteine nature. Underrepresented k-mers for *Bifidobacteriaceae bacterium* showed up as 0, this was confirmed by using `grep`.
+
+```{r bifido k-mers}
+# Translate all coding DNA sequences into protein sequences, lapply applies the translate function to each CDS.
+bifido_prot <- lapply(bifido_cds, translate)
+
+# Flatten the list into a single character vector
+prots_bifido <- unlist(bifido_prot)
+
+# Extract the unique amino acids present in the protein sequences
+aa_bifido <- unique(prots_bifido)
+# Remove the stop codon from the list of amino acids
+aa_bifido <- aa_bifido[aa_bifido!="*"]
+
+# Count the frequency of amino acids k-mers of sizes 3-5 and combine into a single vector
+all_counts_bifido <- c(count(prots_bifido, wordsize=3, alphabet=aa_bifido, freq = TRUE),
+                       count(prots_bifido, wordsize=4, alphabet=aa_bifido, freq = TRUE),
+                       count(prots_bifido, wordsize=5, alphabet=aa_bifido, freq = TRUE))
+
+# Identify the top 10 most frequent k-mers
+top_10_bifido <- head(sort(all_counts_bifido, decreasing = TRUE), 10)
+
+top_10_bifido_df <- data.frame(
+  `k-mer` = names(top_10_bifido),
+  Frequency = as.numeric(top_10_bifido)
+)
+
+knitr::kable(top_10_bifido_df, caption = "Table 10: Frequency of overrepresented k-mers for Bifidobacteriaceae")
+
+# Identify the bottom 10 most frequent k-mers
+bottom_10_bifido <- head(sort(all_counts_bifido, decreasing = FALSE), 10)
+
+bottom_10_bifido_df <- data.frame(
+  `k-mer` = names(bottom_10_bifido),
+  Frequency = as.numeric(bottom_10_bifido)
+)
+
+knitr::kable(bottom_10_bifido_df, caption = "Table 11: Frequency of underrepresented k-mers for Bifidobacteriaceae")
+
+# Confirm that cysteine rich codon's do not exist as unusual for it to show up not once in genome.
+# grep("CCC", prots_bifido)
+# grep("CFP", prots_bifido)
+# grep("CHR", prots_bifido)
+# grep("CPY", prots_bifido)
+```
+
+#### *E. coli* k-mers
+
+The same k-mers in *E. coli* were investigated to compare the differneces by using `names` function to source the k-mer frequencies gained by using the `count` function on the *E. coli* protein sequence. The comparison results can be seen in Table 14 and 15. 
+
+```{r e. coli k-mers}
+# Translate all coding DNA sequences into protein sequences, lapply applies the translate function to each CDS.
+ecoli_prot <- lapply(ecoli_cds, translate)
+
+# Flatten the list into a single character vector
+prots_ecoli <- unlist(ecoli_prot)
+
+# Extract the unique amino acids present in the protein sequences
+aa_ecoli <- unique(prots_ecoli)
+# Remove the stop codon from the list of amino acids
+aa_ecoli <- aa_ecoli[aa_ecoli!="*"]
+
+# Count the frequency of amino acids k-mers of sizes 3-5 and combine into a single vector
+all_counts_ecoli <- c(count(prots_ecoli, wordsize=3, alphabet=aa_ecoli, freq = TRUE),
+                      count(prots_ecoli, wordsize=4, alphabet=aa_ecoli, freq = TRUE), 
+                      count(prots_ecoli, wordsize=5, alphabet=aa_ecoli, freq = TRUE))
+
+# Identify the top 10 most frequent k-mers from bifido in the e. coli
+top_10_ecoli <- all_counts_ecoli[names(top_10_bifido)]
+
+top_10_ecoli_df <- data.frame(
+  `k-mer` = names(top_10_ecoli),
+  Frequency = as.numeric(top_10_ecoli)
+)
+
+knitr::kable(top_10_ecoli_df, caption = "Table 12: Frequency of underrepresented k-mers for E. coli")
+
+# Identify the bottom 10 most frequent k-mers from bifido in the e. coli
+bottom_10_ecoli <- all_counts_ecoli[names(bottom_10_bifido)]
+
+bottom_10_ecoli_df <- data.frame(
+  `k-mer` = names(bottom_10_ecoli),
+  Frequency = as.numeric(bottom_10_ecoli)
+)
+
+knitr::kable(bottom_10_ecoli_df, caption = "Table 13: Frequency of underrepresented k-mers for E. coli")
+
+# Create a data frame comparing the most and least frequent amino acid k-mers between Bifido and E. coli
+top_kmer_comparison <- data.frame(kmer = c(names(top_10_bifido)), # k-mer names taken from the top 10 k-mers in bifido
+                   Bifidobacterium = c(top_10_bifido), # frequencies of k-mers in bifido
+                   E_coli = c(top_10_ecoli), # frequency of the same k-mers in E. coli
+                   stringsAsFactors = FALSE)
+
+# Remove the row names so the data frame is clear
+rownames(top_kmer_comparison) <- NULL
+knitr::kable(top_kmer_comparison, caption = "Table 14: Top 10 k-mers in Bifido compared to E. coli's k-mer frequency ")
+
+bottom_kmer_comparison <- data.frame(kmer = c(names(bottom_10_bifido)), # k-mer names taken from the top 10 k-mers in bifido
+                   Bifidobacterium = c(bottom_10_bifido), # frequencies of k-mers in bifido
+                   E_coli = c(bottom_10_ecoli), # frequency of the same k-mers in E. coli
+                   stringsAsFactors = FALSE)
+
+# Remove the row names so the data frame is clear
+rownames(bottom_kmer_comparison) <- NULL
+knitr::kable(bottom_kmer_comparison, caption = "Table 15: Bottom 10 k-mers in Bifido compared to E. coli's k-mer frequency ")
+
+```
+
+#### Overrepresented k-mer Plots
+
+To visualise these differences the data for the overrepresented *Bifidobacteriaceae bacterium* k-mers were put into a dot plot. Figure 8 shows that *E. coli* had higher frequency of these k-mers throughout, although the AAA and VAA k-mer's in *Bifidobacteriaceae bacterium* had a higher frequency than in *E. coli*. This could be a result of the organism requiring specific structural motifs that *E. coli* does not [@moeckel_survey_2024].
+
+```{r top k-mer plots, fig.cap = "Figure 8: Frequency of overrepresented k-mers in Bifidobacteriaceae compared with the same k-mers in E. coli"}
+# Create the plot with Bifidobacteriaceae data
+plot(1:nrow(top_kmer_comparison), top_kmer_comparison$Bifidobacterium,
+     xlab = "K-mer",
+     ylab = "Frequency",
+     main = "K-mer Frequency Comparison",
+     pch = 19,
+     col = "pink",
+     xaxt = "n",
+     ylim = c(0, max(c(top_kmer_comparison$Bifidobacterium, top_kmer_comparison$E_coli))))
+
+# Add E. coli data points
+points(1:nrow(top_kmer_comparison), top_kmer_comparison$E_coli,
+       pch = 19,
+       col = "lightblue")
+
+# Add x-axis labels with k-mer names
+axis(1, at = 1:nrow(top_kmer_comparison), labels = top_kmer_comparison$kmer, las = 2, cex.axis = 0.7)
+
+# Add a legend
+legend("topright", 
+       legend = c("Bifidobacteriaceae", "E. coli"),
+       col = c("pink", "lightblue"),
+       cex = 0.7, # size of font
+       bty = "n", # no border around legend
+       pch = 19)
+
+```
+
+#### Underrepresented k-mer plots
+
+Figure 9 shows that *E. coli* had a higher frequency of codons that are underrepresented in *Bifidobacteriaceae bacterium*. The largest difference was observed in the CPY codon. *Bifidobacteriaceae bacterium* does not express any of these cysteine rich codons whilst *E. coli* expresses them at a very low frequency. It could suggest that because of the low GC-content in *Bifidobacteriaceae bacterium*, they are less likely to produce cysteine rich regions as they are only coded by two codons, TGT and TGC [@moeckel_survey_2024]. Since *E. coli* had a higher GC-content it could suggest their slightly higher frequency of these k-mers. *Bifidobacteriaceae bacterium* may not require cysteine for structural motifs, and therefore does not provide any selective pressure to maintain it, hence them not existing [@takumi_bacterial_2016]. 
+
+```{r Bottom k-mer plots, fig.cap = "Figure 9: Frequency of underrepresented k-mers in Bifidobacteriaceae compared with the same k-mers in E. coli"}
+# Create the plot with Bifidobacteriaceae data
+plot(1:nrow(bottom_kmer_comparison), bottom_kmer_comparison$Bifidobacterium,
+     xlab = "K-mer",
+     ylab = "Frequency",
+     main = "10 Bottom k-mers in Bifidobacteriaceae compared with E. coli",
+     pch = 19,
+     col = "pink",
+     xaxt = "n",
+     ylim = c(0, max(c(bottom_kmer_comparison$Bifidobacterium, bottom_kmer_comparison$E_coli))))
+
+# Add E. coli data points
+points(1:nrow(bottom_kmer_comparison), bottom_kmer_comparison$E_coli,
+       pch = 19,
+       col = "lightblue")
+
+# Add x-axis labels with k-mer names
+axis(1, at = 1:nrow(bottom_kmer_comparison), labels = bottom_kmer_comparison$kmer, las = 2, cex.axis = 0.7)
+
+# Add a legend
+legend("topleft", 
+       legend = c("Bifidobacteriaceae", "E. coli"),
+       col = c("pink", "lightblue"),
+       cex = 0.7,
+       bty = "n",
+       pch = 19)
+```
+
+### For Reproducibility
+```{r session_info, echo=TRUE}
+sessionInfo()
+```
+
+### References
+```{r references, echo=TRUE}
+library(report)
+cite_packages()
+```
+---
+nocite: '@*'
+---
