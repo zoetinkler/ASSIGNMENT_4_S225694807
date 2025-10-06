@@ -10,13 +10,13 @@
 This repository contains a single R Markdown Script that performs analysis of gene expression, tree growth and biological sequence data.
 The R Markdown Script is broken into two parts:
 
-> Note: The HTML output does not show the coding used for outputs. View the raw .rmd file for coding used.
+> Note: The HTML output does not show the coding used to create outputs. View the raw .rmd file for coding used.
 
 **Part 1: Gene Expression and Tree Growth Analysis**  
    - Downloads gene expression and tree growth datasets.  
-   - Calculates mean gene expression, top-expressed genes, and counts genes below a threshold.  
-   - Visualizes gene expression distributions.  
-   - Analyzes tree circumferences at two sites (Northeast and Southwest) over time.  
+   - Calculates mean gene expression, highest expressed genes, and counts genes expressed less than 10.  
+   - Visualises gene expression distribution.  
+   - Analyses tree circumferences at two sites (Northeast and Southwest) over time.  
    - Calculates growth over 10 years and performs a t-test to compare sites.  
 
 **Part 2: Biological Sequence Analysis**  
@@ -84,7 +84,7 @@ The R Markdown Script is broken into two parts:
 3. `10 genes mean expression`  
 **Purpose:** Sort genes by mean expression and read top 10 lines 
 **Inputs:** `gene_expression_data`  
-**Outputs:** Genes that have the most high expression across samples. 
+**Outputs:** Genes that have the highest expression across samples. 
 
 4. `genes less than 10`  
 **Purpose:** Count the number of genes with mean expression of less than 10 and print the result  
